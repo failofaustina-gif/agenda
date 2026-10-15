@@ -152,6 +152,19 @@ label{font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:
 .mact button{box-shadow:none;background:var(--soft)}
 .mact .primary{background:var(--accent)}
 .danger{color:var(--medico);margin-right:auto}
+.repbox{background:var(--soft);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.daypick{display:flex;gap:5px;flex-wrap:wrap}
+.daypick button{box-shadow:none;background:var(--surface);color:var(--muted);width:42px;padding:6px 0;font-size:.82rem}
+.daypick button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.repnote{font-size:.8rem;color:var(--muted);margin:0}
+.ev .rp{margin-left:auto;opacity:.8}
+.routine{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.routine li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:var(--cb);cursor:pointer}
+.routine li:hover{filter:brightness(.97)}
+.routine .ri{color:var(--c);display:grid;place-items:center}
+.routine .rt{font-weight:600;overflow-wrap:anywhere}
+.routine .rd{font-size:.76rem;color:var(--muted)}
+.side hr{border:0;border-top:1.5px solid var(--line);margin:6px 0;width:100%}
 .banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--evento-bg);color:var(--ink);border-radius:16px;padding:10px 14px;font-size:.9rem}
 .banner button{box-shadow:none}
 @media (prefers-reduced-motion:no-preference){.ev,.task{transition:transform .15s}.ev:hover{transform:translateY(-2px)}}
@@ -216,6 +229,9 @@ label{font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:
       <ul class="tasks" id="taskList"></ul>
       <p class="sub" id="doneHead">Hechos</p>
       <ul class="tasks" id="doneList"></ul>
+      <hr>
+      <h3>Mi rutina</h3>
+      <ul class="routine" id="routineList"></ul>
     </aside>
   </div>
 </div>
@@ -225,14 +241,28 @@ label{font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:
     <h3 id="mTitle">Nuevo evento</h3>
     <label>¿Qué es?<input id="fTitle" required placeholder="Ej: Turno dermatólogo"></label>
     <div><label>Categoría</label><div class="catpick" id="fCat" style="margin-top:6px"></div></div>
-    <label>Fecha<input type="date" id="fDate" required></label>
+    <label><span id="fDateLbl">Fecha</span><input type="date" id="fDate" required></label>
     <div class="row2">
       <label>Desde<input type="time" id="fStart"></label>
       <label>Hasta<input type="time" id="fEnd"></label>
     </div>
+    <div class="repbox">
+      <label>Repetir
+        <select id="fRep">
+          <option value="none">No se repite</option>
+          <option value="weekly">Algunos días de la semana</option>
+          <option value="weekdays">De lunes a viernes</option>
+          <option value="daily">Todos los días</option>
+        </select>
+      </label>
+      <div class="daypick" id="fDays" hidden></div>
+      <label id="fUntilWrap" hidden>Hasta el (opcional)<input type="date" id="fUntil"></label>
+      <p class="repnote" id="fRepNote" hidden>Es parte de tu rutina: los cambios se aplican a todas las repeticiones.</p>
+    </div>
     <label>Notas<textarea id="fNote" rows="2" placeholder="Dirección, qué llevar, aula…"></textarea></label>
     <div class="mact">
       <button type="button" class="danger" id="fDel" hidden>Borrar</button>
+      <button type="button" id="fDelOne" hidden>Quitar solo este día</button>
       <button type="button" id="fCancel">Cancelar</button>
       <button type="submit" class="primary">Guardar</button>
     </div>
@@ -269,12 +299,11 @@ function sample(){
   const m=monday(new Date()), d=i=>iso(addDays(m,i));
   return {sample:true,off:[],
     events:[
-      {id:uid(),title:"Running 8 km",cat:"deporte",date:d(0),start:"07:00",end:"08:00",note:"Ejemplo"},
-      {id:uid(),title:"Clase de Macro",cat:"facu",date:d(0),start:"19:00",end:"21:00",note:"Ejemplo"},
-      {id:uid(),title:"Ayudantía práctica",cat:"ayudantia",date:d(1),start:"17:00",end:"19:00",note:"Ejemplo"},
+      {id:uid(),title:"Running",cat:"deporte",date:d(0),start:"07:00",end:"08:00",note:"Ejemplo",rep:{mode:"weekly",days:[0,2,4],until:""}},
+      {id:uid(),title:"Clase de Macro",cat:"facu",date:d(0),start:"19:00",end:"21:00",note:"Ejemplo",rep:{mode:"weekly",days:[0,3],until:""}},
+      {id:uid(),title:"Ayudantía práctica",cat:"ayudantia",date:d(1),start:"17:00",end:"19:00",note:"Ejemplo",rep:{mode:"weekly",days:[1],until:""}},
       {id:uid(),title:"Turno clínico",cat:"medico",date:d(2),start:"09:30",end:"10:00",note:"Ejemplo"},
-      {id:uid(),title:"Gimnasio",cat:"deporte",date:d(3),start:"07:30",end:"08:30",note:"Ejemplo"},
-      {id:uid(),title:"Clase de Econometría",cat:"facu",date:d(3),start:"18:00",end:"20:00",note:"Ejemplo"},
+      {id:uid(),title:"Gimnasio",cat:"deporte",date:d(1),start:"07:30",end:"08:30",note:"Ejemplo",rep:{mode:"weekly",days:[1,3],until:""}},
       {id:uid(),title:"Revisar gastos del mes",cat:"finanzas",date:d(4),start:"20:00",end:"21:00",note:"Ejemplo"},
       {id:uid(),title:"Cumpleaños",cat:"evento",date:d(5),start:"21:00",end:"",note:"Ejemplo"},
       {id:uid(),title:"Fondo largo",cat:"deporte",date:d(6),start:"09:00",end:"10:30",note:"Ejemplo"},
@@ -294,7 +323,16 @@ let view="week", cursor=new Date();
 try{view=localStorage.getItem(KEY+"-view")||"week"}catch(e){}
 
 const visible=e=>!S.off.includes(e.cat);
-const evsOn=day=>S.events.filter(e=>e.date===day&&visible(e)).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99"));
+const wd=k=>(parse(k).getDay()+6)%7;
+function occurs(e,k){
+  if(!e.rep)return e.date===k;
+  if(k<e.date||(e.rep.until&&k>e.rep.until)||(e.skip||[]).includes(k))return false;
+  return e.rep.days.includes(wd(k));
+}
+const byStart=(a,b)=>(a.start||"99").localeCompare(b.start||"99");
+const allOn=day=>S.events.filter(e=>occurs(e,day)).sort(byStart);
+const evsOn=day=>allOn(day).filter(visible);
+const repText=r=>r.mode==="daily"?"Todos los días":r.mode==="weekdays"?"Lun a vie":r.days.slice().sort().map(i=>DOW[i]).join(" · ");
 const fmtT=e=>e.start?(e.end?`${e.start} – ${e.end}`:e.start):"Todo el día";
 
 function renderLegend(){
@@ -309,8 +347,12 @@ $("#legend").addEventListener("click",e=>{
 
 function renderSummary(){
   const now=new Date(), hhmm=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const up=S.events.filter(e=>e.date>todayISO||(e.date===todayISO&&(e.start||"23:59")>=hhmm))
-    .sort((a,b)=>(a.date+(a.start||"99")).localeCompare(b.date+(b.start||"99")))[0];
+  let up=null;
+  for(let i=0;i<120&&!up;i++){
+    const k=iso(addDays(now,i));
+    const e=allOn(k).find(e=>i>0||(e.start||"23:59")>=hhmm);
+    if(e)up={...e,date:k};
+  }
   const nc=$("#nextCard");
   if(up){
     nc.setAttribute("style",cv(up.cat));
@@ -318,19 +360,19 @@ function renderSummary(){
     const d=parse(up.date), when=up.date===todayISO?"Hoy":up.date===iso(addDays(now,1))?"Mañana":`${DIAS[d.getDay()]} ${d.getDate()}`;
     $("#nextS").textContent=`${when} · ${fmtT(up)} · ${CATS[up.cat]}`;
   }else{nc.removeAttribute("style");$("#nextT").textContent="Nada agendado";$("#nextS").textContent="Agregá tu próximo evento"}
-  const t=S.events.filter(e=>e.date===todayISO);
+  const t=allOn(todayISO);
   $("#todayN").textContent=t.length?`${t.length} ${t.length===1?"cosa":"cosas"}`:"Día libre";
   $("#todayS").textContent=t.length?t.map(e=>e.title).join(" · "):"No tenés nada agendado hoy";
-  const m=iso(monday(now)), e=iso(addDays(monday(now),6));
-  const w=S.events.filter(x=>x.date>=m&&x.date<=e);
+  const w=[];for(let i=0;i<7;i++)w.push(...allOn(iso(addDays(monday(now),i))));
   $("#weekN").textContent=`${w.length} eventos`;
   const byCat=Object.keys(CATS).map(k=>[k,w.filter(x=>x.cat===k).length]).filter(x=>x[1]);
   $("#weekS").textContent=byCat.length?byCat.map(([k,n])=>`${n} ${CATS[k].toLowerCase()}`).join(" · "):"Semana despejada";
 }
 
-function evCard(e){
-  return `<div class="ev" draggable="true" data-id="${e.id}" style="${cv(e.cat)}" tabindex="0" title="${CATS[e.cat]}">
-    <span class="t">${ico(e.cat)}${fmtT(e)}</span><span class="n">${esc(e.title)}</span></div>`;
+const RP='<svg class="ico rp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Rutina"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
+function evCard(e,k){
+  return `<div class="ev" draggable="true" data-id="${e.id}" data-date="${k}" style="${cv(e.cat)}" tabindex="0" title="${CATS[e.cat]}${e.rep?" · rutina":""}">
+    <span class="t">${ico(e.cat)}${fmtT(e)}${e.rep?RP:""}</span><span class="n">${esc(e.title)}</span></div>`;
 }
 function renderWeek(){
   const m=monday(cursor), end=addDays(m,6);
@@ -342,7 +384,7 @@ function renderWeek(){
     const d=addDays(m,i), k=iso(d);
     h+=`<div class="day ${k===todayISO?"is-today":""}" data-day="${k}">
       <div class="dhead"><span>${DOW[i]}</span><b>${d.getDate()}</b></div>
-      ${evsOn(k).map(evCard).join("")}
+      ${evsOn(k).map(e=>evCard(e,k)).join("")}
       <button class="addday" data-add="${k}">+ agregar</button></div>`;
   }
   $("#cal").innerHTML=h+"</div>";
@@ -358,7 +400,7 @@ function renderMonth(){
     const evs=evsOn(k);
     h+=`<div class="mcell ${d.getMonth()!==mo?"out":""} ${k===todayISO?"is-today":""}" data-day="${k}" data-add="${k}">
       <span class="mnum">${d.getDate()}</span>
-      ${evs.slice(0,3).map(e=>`<div class="mev" draggable="true" data-id="${e.id}" style="${cv(e.cat)}" title="${esc(e.title)}">${e.start?e.start+" ":""}${esc(e.title)}</div>`).join("")}
+      ${evs.slice(0,3).map(e=>`<div class="mev" draggable="true" data-id="${e.id}" data-date="${k}" style="${cv(e.cat)}" title="${esc(e.title)}">${e.start?e.start+" ":""}${esc(e.title)}</div>`).join("")}
       ${evs.length>3?`<span class="more">+${evs.length-3} más</span>`:""}</div>`;
   }
   $("#cal").innerHTML=h+"</div></div>";
@@ -383,7 +425,13 @@ function renderTasks(){
   $("#ringT").textContent=`${dn} de ${tot} hechos`;
   const late=open.filter(t=>t.due&&t.due<todayISO).length;
   $("#lateT").textContent=late?`${late} vencido${late>1?"s":""}`:"Nada vencido";
+  const rs=S.events.filter(e=>e.rep&&!(e.rep.until&&e.rep.until<todayISO)).sort(byStart);
+  $("#routineList").innerHTML=rs.length?rs.map(e=>`<li style="${cv(e.cat)}" data-rid="${e.id}" tabindex="0">
+    <span class="ri">${ico(e.cat)}</span><div><div class="rt">${esc(e.title)}</div><div class="rd">${repText(e.rep)}${e.start?" · "+e.start:""}</div></div></li>`).join("")
+    :'<li class="empty" style="background:none;cursor:default">Todavía no tenés rutina. Al crear un evento, elegí "Repetir".</li>';
 }
+$("#routineList").addEventListener("click",e=>{const li=e.target.closest("[data-rid]");if(li){const ev=S.events.find(x=>x.id===li.dataset.rid);openModal(ev,ev.date)}});
+$("#routineList").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.rid){const ev=S.events.find(x=>x.id===e.target.dataset.rid);openModal(ev,ev.date)}});
 function render(){
   renderLegend();
   $("#vWeek").setAttribute("aria-pressed",view==="week");
@@ -406,14 +454,39 @@ function drawPick(){
   $("#fCat").innerHTML=Object.keys(CATS).map(k=>`<button type="button" style="${cv(k)}" data-pick="${k}" aria-pressed="${k===pickCat}">${ico(k)}${CATS[k]}</button>`).join("");
 }
 $("#fCat").addEventListener("click",e=>{const b=e.target.closest("[data-pick]");if(b){pickCat=b.dataset.pick;drawPick()}});
+let pickDays=[], occDate=null;
+function drawDays(){
+  $("#fDays").innerHTML=DOW.map((d,i)=>`<button type="button" data-wd="${i}" aria-pressed="${pickDays.includes(i)}">${d}</button>`).join("");
+}
+function syncRep(){
+  const m=$("#fRep").value;
+  $("#fDays").hidden=m!=="weekly";
+  $("#fUntilWrap").hidden=m==="none";
+  $("#fDateLbl").textContent=m==="none"?"Fecha":"Empieza el";
+}
+$("#fRep").addEventListener("change",()=>{
+  if($("#fRep").value==="weekly"&&!pickDays.length&&$("#fDate").value){pickDays=[wd($("#fDate").value)];drawDays()}
+  syncRep();
+});
+$("#fDays").addEventListener("click",e=>{
+  const b=e.target.closest("[data-wd]"); if(!b)return;
+  const i=+b.dataset.wd; pickDays=pickDays.includes(i)?pickDays.filter(x=>x!==i):[...pickDays,i]; drawDays();
+});
 function openModal(ev,day){
-  editing=ev||null; pickCat=ev?ev.cat:"facu"; drawPick();
-  $("#mTitle").textContent=ev?"Editar evento":"Nuevo evento";
+  editing=ev||null; occDate=day||null; pickCat=ev?ev.cat:"facu"; drawPick();
+  $("#mTitle").textContent=ev?(ev.rep?"Editar rutina":"Editar evento"):"Nuevo evento";
   $("#fTitle").value=ev?ev.title:"";
   $("#fDate").value=ev?ev.date:(day||todayISO);
   $("#fStart").value=ev?ev.start:""; $("#fEnd").value=ev?ev.end:"";
   $("#fNote").value=ev&&ev.note!=="Ejemplo"?ev.note:"";
-  $("#fDel").hidden=!ev; $("#scrim").hidden=false; $("#fTitle").focus();
+  $("#fRep").value=ev&&ev.rep?ev.rep.mode:"none";
+  pickDays=ev&&ev.rep?[...ev.rep.days]:[wd($("#fDate").value)];
+  $("#fUntil").value=ev&&ev.rep?ev.rep.until||"":"";
+  drawDays(); syncRep();
+  $("#fRepNote").hidden=!(ev&&ev.rep);
+  $("#fDel").hidden=!ev; $("#fDel").textContent=ev&&ev.rep?"Borrar toda la rutina":"Borrar";
+  $("#fDelOne").hidden=!(ev&&ev.rep&&day&&occurs(ev,day));
+  $("#scrim").hidden=false; $("#fTitle").focus();
 }
 const closeModal=()=>{$("#scrim").hidden=true};
 $("#newEv").onclick=()=>openModal(null);
@@ -424,22 +497,28 @@ $("#evForm").addEventListener("submit",e=>{
   e.preventDefault();
   const data={title:$("#fTitle").value.trim(),cat:pickCat,date:$("#fDate").value,start:$("#fStart").value,end:$("#fEnd").value,note:$("#fNote").value.trim()};
   if(!data.title||!data.date)return;
+  const m=$("#fRep").value;
+  data.rep=m==="none"?null:{mode:m,until:$("#fUntil").value,
+    days:m==="daily"?[0,1,2,3,4,5,6]:m==="weekdays"?[0,1,2,3,4]:(pickDays.length?pickDays:[wd(data.date)])};
   if(editing)Object.assign(editing,data); else S.events.push({id:uid(),...data});
   save(); closeModal(); render();
 });
 $("#fDel").onclick=()=>{S.events=S.events.filter(x=>x!==editing);save();closeModal();render()};
+$("#fDelOne").onclick=()=>{editing.skip=[...(editing.skip||[]),occDate];save();closeModal();render()};
 $("#cal").addEventListener("click",e=>{
   const card=e.target.closest("[data-id]");
-  if(card){openModal(S.events.find(x=>x.id===card.dataset.id));return}
+  if(card){openModal(S.events.find(x=>x.id===card.dataset.id),card.dataset.date);return}
   const add=e.target.closest("[data-add]"); if(add)openModal(null,add.dataset.add);
 });
-$("#cal").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.id)openModal(S.events.find(x=>x.id===e.target.dataset.id))});
+$("#cal").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.id)openModal(S.events.find(x=>x.id===e.target.dataset.id),e.target.dataset.date)});
 
 /* arrastrar y soltar */
-$("#cal").addEventListener("dragstart",e=>{const c=e.target.closest("[data-id]");if(!c)return;e.dataTransfer.setData("text/plain",c.dataset.id);e.dataTransfer.effectAllowed="move"});
+$("#cal").addEventListener("dragstart",e=>{const c=e.target.closest("[data-id]");if(!c)return;e.dataTransfer.setData("text/plain",c.dataset.id+"|"+c.dataset.date);e.dataTransfer.effectAllowed="move"});
 $("#cal").addEventListener("dragover",e=>{const d=e.target.closest("[data-day]");if(!d)return;e.preventDefault();document.querySelectorAll(".over").forEach(x=>x!==d&&x.classList.remove("over"));d.classList.add("over")});
 $("#cal").addEventListener("dragleave",e=>{const d=e.target.closest("[data-day]");if(d&&!d.contains(e.relatedTarget))d.classList.remove("over")});
-$("#cal").addEventListener("drop",e=>{const d=e.target.closest("[data-day]");if(!d)return;e.preventDefault();const ev=S.events.find(x=>x.id===e.dataTransfer.getData("text/plain"));if(ev){ev.date=d.dataset.day;save();render()}});
+$("#cal").addEventListener("drop",e=>{const d=e.target.closest("[data-day]");if(!d)return;e.preventDefault();const[id,from]=e.dataTransfer.getData("text/plain").split("|");const ev=S.events.find(x=>x.id===id);if(!ev)return;const to=d.dataset.day;if(to===from){render();return}
+  if(ev.rep){ev.skip=[...(ev.skip||[]),from];S.events.push({...ev,id:uid(),date:to,rep:null,skip:undefined})}else ev.date=to;
+  save();render()});
 
 /* pendientes */
 $("#taskForm").addEventListener("submit",e=>{
